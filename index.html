@@ -1,0 +1,495 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>A Special Question For You</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Quicksand:wght@500;700&family=Poppins:wght@400;600;700&display=swap');
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    height: 100vh;
+    width: 100vw;
+    background: linear-gradient(135deg, #1a0011, #2d0a1f, #1a0011);
+    font-family: 'Poppins', sans-serif;
+    overflow: hidden;
+    user-select: none;
+  }
+
+  /* ── floating hearts bg ── */
+  .hearts-bg { position: fixed; inset: 0; pointer-events: none; z-index: 0; }
+  .fh {
+    position: absolute; opacity: 0;
+    animation: fhUp linear infinite;
+  }
+  @keyframes fhUp {
+    0%   { opacity: 0; transform: translateY(100vh) rotate(0deg) scale(.5); }
+    10%  { opacity: .55; }
+    90%  { opacity: .55; }
+    100% { opacity: 0; transform: translateY(-10vh) rotate(360deg) scale(1.2); }
+  }
+
+  /* ── question header ── */
+  .question {
+    position: fixed; top: 5%; left: 50%; transform: translateX(-50%);
+    text-align: center; z-index: 10; pointer-events: none;
+  }
+  .question::before {
+    content: '';
+    position: absolute;
+    top: 50%; left: 50%;
+    transform: translate(-50%, -50%);
+    width: 120%; height: 160%;
+    background: radial-gradient(ellipse, rgba(255,68,119,.12) 0%, transparent 70%);
+    border-radius: 50%;
+    pointer-events: none;
+    z-index: -1;
+  }
+  .question .whisper {
+    font-family: 'Quicksand', sans-serif; font-weight: 700;
+    font-size: clamp(16px, 3vw, 22px);
+    color: #ff99bb;
+    opacity: .85;
+    margin-bottom: 2px;
+    letter-spacing: 1px;
+  }
+  .question h1 {
+    font-family: 'Quicksand', sans-serif; font-weight: 700;
+    font-size: clamp(30px, 6.5vw, 58px);
+    color: #ff4477;
+    text-shadow: 0 0 30px rgba(255,68,119,.35);
+    line-height: 1.15;
+  }
+  .question .subtext {
+    font-family: 'Quicksand', sans-serif; font-weight: 700;
+    font-size: clamp(14px, 2.5vw, 18px);
+    color: #cc6699;
+    opacity: .7;
+    margin-top: 6px;
+  }
+
+  /* ── buttons (absolute-positioned for bouncing) ── */
+  .vbtn {
+    position: absolute;
+    border: none; border-radius: 50px;
+    font-family: 'Poppins', sans-serif; font-weight: 600;
+    cursor: pointer; z-index: 20; white-space: nowrap;
+    transition: box-shadow .15s;
+  }
+  .vbtn:active { filter: brightness(1.15); }
+
+  .btn-yes {
+    background: linear-gradient(135deg, #ff4477, #ff6699);
+    color: #fff;
+    box-shadow: 0 4px 22px rgba(255,68,119,.45);
+  }
+  .btn-no {
+    background: linear-gradient(135deg, #aa6680, #996677);
+    color: #f0d0dd;
+    box-shadow: 0 4px 18px rgba(0,0,0,.3);
+  }
+  /* when No "blends", it looks like Yes */
+  .btn-no.blended {
+    background: linear-gradient(135deg, #ff4477, #ff6699);
+    color: #fff;
+    box-shadow: 0 4px 22px rgba(255,68,119,.45);
+  }
+
+  /* ── celebration ── */
+  .celebration {
+    position: fixed; inset: 0; z-index: 500;
+    display: flex; align-items: center; justify-content: center;
+    background: linear-gradient(135deg, #1a0011, #2d0a1f, #1a0011);
+    opacity: 0; pointer-events: none;
+    transition: opacity .8s;
+  }
+  .celebration.show { opacity: 1; pointer-events: all; }
+  .cel-inner {
+    text-align: center;
+    transform: scale(.5);
+    transition: transform 1s cubic-bezier(.34,1.56,.64,1);
+  }
+  .celebration.show .cel-inner { transform: scale(1); }
+  .cel-inner .big-heart {
+    font-size: clamp(70px,14vw,120px);
+    display: inline-block;
+    animation: hb .8s ease-in-out infinite;
+  }
+  @keyframes hb {
+    0%,100% { transform: scale(1); }
+    15% { transform: scale(1.3); }
+    30% { transform: scale(1); }
+    45% { transform: scale(1.15); }
+  }
+  .cel-inner h1 {
+    font-family: 'Quicksand', sans-serif; font-weight: 700;
+    font-size: clamp(34px,7vw,52px);
+    color: #ff4477;
+    text-shadow: 0 0 30px rgba(255,68,119,.35);
+    margin: 10px 0;
+  }
+  .cel-inner p {
+    font-family: 'Quicksand', sans-serif; font-weight: 700;
+    font-size: clamp(17px,3.5vw,24px);
+    color: #ff99bb;
+  }
+
+  #confetti { position: fixed; inset: 0; z-index: 600; pointer-events: none; }
+</style>
+</head>
+<body>
+
+<div class="hearts-bg" id="hbg"></div>
+
+<div class="question" id="question">
+  <p class="whisper">I've been meaning to ask you something...</p>
+  <h1>Will You Be<br>My Valentine?</h1>
+  <p class="subtext">...because every moment with you feels like magic</p>
+</div>
+
+<div id="arena"></div>
+
+<div class="celebration" id="cel">
+  <div class="cel-inner">
+    <div class="big-heart">&#10084;</div>
+    <h1>You said yes!</h1>
+    <p>I promise to make every moment count</p>
+    <p style="font-size:clamp(15px,3vw,20px);color:#dd7799;margin-top:6px;">You + Me = Forever</p>
+  </div>
+</div>
+
+<canvas id="confetti"></canvas>
+
+<script>
+/* ═══════════════════════════════════════════
+   CONFIG
+   ═══════════════════════════════════════════ */
+const BLEND_ROUND   = 5;      // after this many No presses → blend
+const SPEED_BASE    = 2.2;    // bounce speed (px/frame)
+const YES_FONT_INIT = 19;     // starting Yes font size
+const NO_FONT_INIT  = 19;     // starting No font size
+
+/* ═══════════════════════════════════════════
+   STATE
+   ═══════════════════════════════════════════ */
+let noPresses = 0;
+let bouncing  = false;
+let done      = false;
+let balls     = [];  // { el, type, x, y, w, h, vx, vy }
+let rafId     = null;
+const arena   = document.getElementById('arena');
+const W = () => window.innerWidth;
+const H = () => window.innerHeight;
+
+/* ═══════════════════════════════════════════
+   FLOATING HEARTS
+   ═══════════════════════════════════════════ */
+const hEmoji = ['\u2665','\u2764'];
+const hbg = document.getElementById('hbg');
+function spawnHeart() {
+  const s = document.createElement('span');
+  s.className = 'fh';
+  s.textContent = hEmoji[Math.random()*hEmoji.length|0];
+  s.style.left = Math.random()*100+'%';
+  s.style.fontSize = (14+Math.random()*20)+'px';
+  const d = 6+Math.random()*8;
+  s.style.animationDuration = d+'s';
+  hbg.appendChild(s);
+  setTimeout(()=>s.remove(), d*1000);
+}
+for(let i=0;i<12;i++) setTimeout(spawnHeart, i*180);
+setInterval(spawnHeart, 650);
+
+/* ═══════════════════════════════════════════
+   HELPERS
+   ═══════════════════════════════════════════ */
+function rndAngle(speed) {
+  const a = Math.random()*Math.PI*2;
+  return { vx: Math.cos(a)*speed, vy: Math.sin(a)*speed };
+}
+
+// Font size for Yes buttons at a given round (shrink as count grows)
+function yesFontAt(round) {
+  // 19 → 17 → 15 → 13 → 11.5 → 10
+  return Math.max(YES_FONT_INIT - round * 1.8, 10);
+}
+// Font size for No button (shrinks faster)
+function noFontAt(round) {
+  // 19 → 15 → 12.5 → 11 → 10.5 → 10  (converges with Yes)
+  return Math.max(NO_FONT_INIT - round * 2.2, 10);
+}
+function padFor(fs) {
+  const r = fs / YES_FONT_INIT;
+  return `${Math.max(Math.round(13*r),5)}px ${Math.max(Math.round(32*r),12)}px`;
+}
+
+/* ═══════════════════════════════════════════
+   CREATE / UPDATE BUTTONS
+   ═══════════════════════════════════════════ */
+function makeBtn(type, fontSize) {
+  const b = document.createElement('button');
+  b.className = 'vbtn ' + (type === 'yes' ? 'btn-yes' : 'btn-no');
+  b.textContent = type === 'yes' ? 'Yes' : 'No';
+  b.style.fontSize = fontSize + 'px';
+  b.style.padding = padFor(fontSize);
+
+  if (type === 'yes') b.addEventListener('click', onYes);
+  else                 b.addEventListener('click', onNo);
+
+  arena.appendChild(b);
+
+  // measure
+  const rect = b.getBoundingClientRect();
+  // random position in lower 70% of screen
+  const x = Math.random()*(W()-rect.width);
+  const y = H()*0.26 + Math.random()*(H()*0.68 - rect.height);
+  b.style.left = x+'px';
+  b.style.top  = y+'px';
+
+  const v = bouncing ? rndAngle(SPEED_BASE*(.7+Math.random()*.6)) : {vx:0,vy:0};
+  return { el:b, type, x, y, w:rect.width, h:rect.height, vx:v.vx, vy:v.vy };
+}
+
+function resizeBtn(ball, fontSize) {
+  ball.el.style.fontSize = fontSize+'px';
+  ball.el.style.padding = padFor(fontSize);
+  const r = ball.el.getBoundingClientRect();
+  ball.w = r.width; ball.h = r.height;
+}
+
+/* ═══════════════════════════════════════════
+   INITIAL SETUP — 1 Yes + 1 No, centered
+   ═══════════════════════════════════════════ */
+function init() {
+  const yb = document.createElement('button');
+  yb.className = 'vbtn btn-yes';
+  yb.textContent = 'Yes';
+  yb.style.fontSize = YES_FONT_INIT+'px';
+  yb.style.padding = padFor(YES_FONT_INIT);
+  yb.addEventListener('click', onYes);
+  arena.appendChild(yb);
+
+  const nb = document.createElement('button');
+  nb.className = 'vbtn btn-no';
+  nb.textContent = 'No';
+  nb.style.fontSize = NO_FONT_INIT+'px';
+  nb.style.padding = padFor(NO_FONT_INIT);
+  nb.addEventListener('click', onNo);
+  arena.appendChild(nb);
+
+  const yr = yb.getBoundingClientRect();
+  const nr = nb.getBoundingClientRect();
+  const gap = 24;
+  const tw  = yr.width + gap + nr.width;
+  const sx  = (W()-tw)/2;
+  const cy  = H()*0.55;
+
+  const yx = sx, yy = cy - yr.height/2;
+  yb.style.left = yx+'px'; yb.style.top = yy+'px';
+
+  const nx = sx + yr.width + gap, ny = cy - nr.height/2;
+  nb.style.left = nx+'px'; nb.style.top = ny+'px';
+
+  balls = [
+    { el:yb, type:'yes', x:yx, y:yy, w:yr.width, h:yr.height, vx:0, vy:0 },
+    { el:nb, type:'no',  x:nx, y:ny, w:nr.width, h:nr.height, vx:0, vy:0 }
+  ];
+}
+
+/* ═══════════════════════════════════════════
+   NO PRESSED
+   ═══════════════════════════════════════════ */
+const noTexts = ['No','But I adore you','My heart hurts','Please, my love?','I won\'t give up','...'];
+function onNo() {
+  if (done) return;
+  noPresses++;
+
+  /* ── past blend: clean up ── */
+  if (noPresses > BLEND_ROUND) {
+    finalCleanup();
+    return;
+  }
+
+  const yFont = yesFontAt(noPresses);
+  const nFont = noFontAt(noPresses);
+
+  /* resize every existing Yes button */
+  balls.filter(b=>b.type==='yes').forEach(b=> resizeBtn(b, yFont));
+
+  /* duplicate: for each existing Yes, create one clone */
+  const curYes = balls.filter(b=>b.type==='yes');
+  const newBalls = [];
+  curYes.forEach(()=> newBalls.push(makeBtn('yes', yFont)));
+  balls.push(...newBalls);
+
+  /* resize + update No button */
+  const noB = balls.find(b=>b.type==='no');
+  if (noB) {
+    resizeBtn(noB, nFont);
+    noB.el.textContent = noTexts[Math.min(noPresses, noTexts.length-1)];
+
+    /* blend round: make No look exactly like Yes */
+    if (noPresses === BLEND_ROUND) {
+      noB.el.classList.add('blended');
+      noB.el.textContent = 'Yes';
+    }
+  }
+
+  /* start bouncing after first No */
+  if (!bouncing) {
+    bouncing = true;
+    balls.forEach(b => {
+      const v = rndAngle(SPEED_BASE*(.7+Math.random()*.6));
+      b.vx = v.vx; b.vy = v.vy;
+    });
+    tick();
+  } else {
+    /* give new clones random velocity */
+    newBalls.forEach(b => {
+      const v = rndAngle(SPEED_BASE*(.7+Math.random()*.6));
+      b.vx = v.vx; b.vy = v.vy;
+    });
+  }
+}
+
+/* ═══════════════════════════════════════════
+   FINAL CLEANUP — keep 1 Yes, remove rest
+   ═══════════════════════════════════════════ */
+function finalCleanup() {
+  const keep = balls.find(b=>b.type==='yes');
+  balls.forEach(b => {
+    if (b === keep) return;
+    b.el.style.transition = 'opacity .35s, transform .35s';
+    b.el.style.opacity = '0';
+    b.el.style.transform = 'scale(.3)';
+    setTimeout(()=>b.el.remove(), 350);
+  });
+  balls = [keep];
+
+  // center & enlarge the survivor, keep bouncing
+  keep.el.style.transition = 'font-size .5s, padding .5s';
+  keep.el.style.fontSize = '24px';
+  keep.el.style.padding = '16px 48px';
+  setTimeout(()=>{
+    const r = keep.el.getBoundingClientRect();
+    keep.w = r.width; keep.h = r.height;
+  }, 60);
+}
+
+/* ═══════════════════════════════════════════
+   YES PRESSED — freeze & celebrate
+   ═══════════════════════════════════════════ */
+function onYes() {
+  if (done) return;
+  done = true;
+  bouncing = false;
+  if (rafId) cancelAnimationFrame(rafId);
+
+  /* freeze all buttons, then fade */
+  balls.forEach(b => {
+    b.vx = 0; b.vy = 0;
+    b.el.style.transition = 'opacity .5s, transform .5s';
+    b.el.style.opacity = '0';
+    b.el.style.transform = 'scale(.5)';
+  });
+
+  document.getElementById('question').style.transition = 'opacity .5s';
+  document.getElementById('question').style.opacity = '0';
+
+  setTimeout(()=>{
+    document.getElementById('cel').classList.add('show');
+    confetti();
+    for(let i=0;i<25;i++) setTimeout(spawnHeart, i*80);
+  }, 550);
+}
+
+/* ═══════════════════════════════════════════
+   BOUNCE LOOP
+   ═══════════════════════════════════════════ */
+function tick() {
+  if (!bouncing) return;
+  const ww = W(), hh = H();
+
+  balls.forEach(b => {
+    b.x += b.vx;
+    b.y += b.vy;
+    if (b.x < 0)          { b.x = 0;        b.vx = Math.abs(b.vx); }
+    if (b.x + b.w > ww)   { b.x = ww-b.w;   b.vx = -Math.abs(b.vx); }
+    if (b.y < 0)          { b.y = 0;        b.vy = Math.abs(b.vy); }
+    if (b.y + b.h > hh)   { b.y = hh-b.h;   b.vy = -Math.abs(b.vy); }
+    b.el.style.left = b.x+'px';
+    b.el.style.top  = b.y+'px';
+  });
+
+  rafId = requestAnimationFrame(tick);
+}
+
+/* ═══════════════════════════════════════════
+   CONFETTI
+   ═══════════════════════════════════════════ */
+function confetti() {
+  const c = document.getElementById('confetti');
+  const ctx = c.getContext('2d');
+  c.width = W(); c.height = H();
+  const P = [];
+  const cols = ['#ff4477','#ff6699','#ffaacc','#ff88bb','#cc2255','#ff3366','#ffccdd','#ff0044','#ff99bb'];
+
+  function burst(cx,cy,n) {
+    for(let i=0;i<n;i++){
+      const a=Math.random()*Math.PI*2, sp=4+Math.random()*14;
+      P.push({x:cx,y:cy,vx:Math.cos(a)*sp,vy:Math.sin(a)*sp-5,
+        sz:5+Math.random()*10,col:cols[Math.random()*cols.length|0],
+        r:Math.random()*360,rv:(Math.random()-.5)*12,
+        g:.12+Math.random()*.08,o:1,heart:Math.random()>.3});
+    }
+  }
+  burst(c.width/2,c.height/2,180);
+  setTimeout(()=>burst(c.width*.3,c.height*.4,80),400);
+  setTimeout(()=>burst(c.width*.7,c.height*.4,80),700);
+  setTimeout(()=>{
+    for(let i=0;i<100;i++)
+      P.push({x:Math.random()*c.width,y:-20-Math.random()*200,
+        vx:(Math.random()-.5)*3,vy:1+Math.random()*3,
+        sz:6+Math.random()*12,col:cols[Math.random()*cols.length|0],
+        r:Math.random()*360,rv:(Math.random()-.5)*8,g:.05,o:1,heart:true});
+  },1200);
+
+  function drawH(cx,cy,sz,rot){
+    ctx.save();ctx.translate(cx,cy);ctx.rotate(rot*Math.PI/180);
+    const s=sz/15;ctx.beginPath();ctx.moveTo(0,s*3);
+    ctx.bezierCurveTo(0,-s,-s*8,-s,-s*8,s*3);
+    ctx.bezierCurveTo(-s*8,s*8,0,s*11,0,s*14);
+    ctx.bezierCurveTo(0,s*11,s*8,s*8,s*8,s*3);
+    ctx.bezierCurveTo(s*8,-s,0,-s,0,s*3);
+    ctx.closePath();ctx.fill();ctx.restore();
+  }
+
+  (function anim(){
+    ctx.clearRect(0,0,c.width,c.height);
+    let live=false;
+    P.forEach(p=>{
+      p.vy+=p.g;p.x+=p.vx;p.y+=p.vy;p.r+=p.rv;p.vx*=.995;
+      if(p.y>c.height+60)p.o-=.03;
+      if(p.o<=0)return; live=true;
+      ctx.globalAlpha=Math.max(p.o,0);ctx.fillStyle=p.col;
+      if(p.heart) drawH(p.x,p.y,p.sz,p.r);
+      else{ctx.save();ctx.translate(p.x,p.y);ctx.rotate(p.r*Math.PI/180);
+        ctx.fillRect(-p.sz/2,-p.sz/4,p.sz,p.sz/2);ctx.restore();}
+    });
+    ctx.globalAlpha=1;
+    if(live)requestAnimationFrame(anim);
+  })();
+}
+
+window.addEventListener('resize',()=>{
+  const c=document.getElementById('confetti');
+  c.width=W();c.height=H();
+});
+
+/* ── GO ── */
+init();
+</script>
+</body>
+</html>
