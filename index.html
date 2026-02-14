@@ -2,7 +2,9 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <title>A Special Question For You</title>
 <style>
   @import url('https://fonts.googleapis.com/css2?family=Quicksand:wght@500;700&family=Poppins:wght@400;600;700&display=swap');
@@ -11,11 +13,17 @@
 
   body {
     height: 100vh;
+    height: 100dvh;
     width: 100vw;
     background: linear-gradient(135deg, #1a0011, #2d0a1f, #1a0011);
     font-family: 'Poppins', sans-serif;
     overflow: hidden;
     user-select: none;
+    -webkit-user-select: none;
+    touch-action: none;
+    overscroll-behavior: none;
+    -webkit-touch-callout: none;
+    padding: env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left);
   }
 
   /* ── floating hearts bg ── */
@@ -77,6 +85,9 @@
     font-family: 'Poppins', sans-serif; font-weight: 600;
     cursor: pointer; z-index: 20; white-space: nowrap;
     transition: box-shadow .15s;
+    -webkit-tap-highlight-color: transparent;
+    min-height: 44px;
+    min-width: 44px;
   }
   .vbtn:active { filter: brightness(1.15); }
 
@@ -163,13 +174,18 @@
 <canvas id="confetti"></canvas>
 
 <script>
+/* ── prevent iOS rubber-band / pull-to-refresh ── */
+document.addEventListener('touchmove', function(e){ e.preventDefault(); }, { passive: false });
+document.addEventListener('gesturestart', function(e){ e.preventDefault(); });
+
 /* ═══════════════════════════════════════════
    CONFIG
    ═══════════════════════════════════════════ */
-const BLEND_ROUND   = 5;      // after this many No presses → blend
-const SPEED_BASE    = 2.2;    // bounce speed (px/frame)
-const YES_FONT_INIT = 19;     // starting Yes font size
-const NO_FONT_INIT  = 19;     // starting No font size
+const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent) || window.innerWidth < 600;
+const BLEND_ROUND   = 5;
+const SPEED_BASE    = isMobile ? 1.6 : 2.2;
+const YES_FONT_INIT = isMobile ? 17 : 19;
+const NO_FONT_INIT  = isMobile ? 17 : 19;
 
 /* ═══════════════════════════════════════════
    STATE
@@ -180,8 +196,8 @@ let done      = false;
 let balls     = [];  // { el, type, x, y, w, h, vx, vy }
 let rafId     = null;
 const arena   = document.getElementById('arena');
-const W = () => window.innerWidth;
-const H = () => window.innerHeight;
+const W = () => window.visualViewport ? window.visualViewport.width : window.innerWidth;
+const H = () => window.visualViewport ? window.visualViewport.height : window.innerHeight;
 
 /* ═══════════════════════════════════════════
    FLOATING HEARTS
@@ -199,8 +215,10 @@ function spawnHeart() {
   hbg.appendChild(s);
   setTimeout(()=>s.remove(), d*1000);
 }
-for(let i=0;i<12;i++) setTimeout(spawnHeart, i*180);
-setInterval(spawnHeart, 650);
+const hCount = isMobile ? 6 : 12;
+const hInterval = isMobile ? 1000 : 650;
+for(let i=0;i<hCount;i++) setTimeout(spawnHeart, i*180);
+setInterval(spawnHeart, hInterval);
 
 /* ═══════════════════════════════════════════
    HELPERS
@@ -401,7 +419,8 @@ function onYes() {
   setTimeout(()=>{
     document.getElementById('cel').classList.add('show');
     confetti();
-    for(let i=0;i<25;i++) setTimeout(spawnHeart, i*80);
+    const celHearts = isMobile ? 12 : 25;
+    for(let i=0;i<celHearts;i++) setTimeout(spawnHeart, i*80);
   }, 550);
 }
 
@@ -445,11 +464,14 @@ function confetti() {
         g:.12+Math.random()*.08,o:1,heart:Math.random()>.3});
     }
   }
-  burst(c.width/2,c.height/2,180);
-  setTimeout(()=>burst(c.width*.3,c.height*.4,80),400);
-  setTimeout(()=>burst(c.width*.7,c.height*.4,80),700);
+  const burstN = isMobile ? 80 : 180;
+  const sideN = isMobile ? 40 : 80;
+  const rainN = isMobile ? 50 : 100;
+  burst(c.width/2,c.height/2,burstN);
+  setTimeout(()=>burst(c.width*.3,c.height*.4,sideN),400);
+  setTimeout(()=>burst(c.width*.7,c.height*.4,sideN),700);
   setTimeout(()=>{
-    for(let i=0;i<100;i++)
+    for(let i=0;i<rainN;i++)
       P.push({x:Math.random()*c.width,y:-20-Math.random()*200,
         vx:(Math.random()-.5)*3,vy:1+Math.random()*3,
         sz:6+Math.random()*12,col:cols[Math.random()*cols.length|0],
